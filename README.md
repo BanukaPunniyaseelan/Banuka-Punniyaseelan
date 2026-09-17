@@ -12,6 +12,6 @@ Python | Machine Learning | Tensorflow | scikit-learn
 
 # My Projects
 
-| Projects | Description | Tools |
-| Offline ChatBot | Conversational AI | Python, Ollama, Illama3.2 |
-| Image Classifier | Identifies objects in photos | Tensorflow, CNN |
+-| Projects | Description | Tools |
+-| Offline ChatBot | Conversational AI | Python, Ollama, Illama3.2 |
+-| Image Classifier | Identifies objects in photos | Tensorflow, CNN |
