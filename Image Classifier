@@ -1,0 +1,320 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "gpuType": "T4",
+      "authorship_tag": "ABX9TyPBUPRURwRaCyfcPcCCVcfl",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    },
+    "accelerator": "GPU"
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/BanukaPunniyaseelan/Banuka-Punniyaseelan/blob/main/Image%20Classifier\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 24,
+      "metadata": {
+        "id": "UxgQ8y0ecdwQ"
+      },
+      "outputs": [],
+      "source": [
+        "import tensorflow as tf\n",
+        "from tensorflow.keras import layers, models\n",
+        "import matplotlib.pyplot as plt"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.cifar10.load_data()"
+      ],
+      "metadata": {
+        "id": "goLbkwAaddit"
+      },
+      "execution_count": 25,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "train_images = train_images / 255.0\n",
+        "test_images = test_images / 255.0\n",
+        "\n",
+        "Class_names = ['airlane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']\n",
+        "\n",
+        "print(\"Training images shapes:\", train_images.shape)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "_cL_4sHklekW",
+        "outputId": "78cdf575-7698-49ba-8955-0cbd1966fe67"
+      },
+      "execution_count": 26,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Training images shapes: (50000, 32, 32, 3)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "plt.figure(figsize=(8,8))\n",
+        "for i in range(2):\n",
+        "  plt.subplot(3, 3, 1+1)\n",
+        "  plt.imshow(train_images[i])\n",
+        "  plt.title(Class_names[train_labels[1] [0]])\n",
+        "  plt.axis('off')\n",
+        "plt.show()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 240
+        },
+        "id": "MXsgRPsprefW",
+        "outputId": "613c0508-67b0-429b-8ca5-a2fc1aae3830"
+      },
+      "execution_count": 33,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<Figure size 800x800 with 1 Axes>"
+            ],
+            "image/png": "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\n"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model = models.Sequential ([\n",
+        "    layers.Conv2D(32, (3,3), activation='relu', input_shape=(32,32,3)),\n",
+        "    layers.MaxPooling2D( (2,2,)),\n",
+        "    layers.Conv2D(64, (3,3), activation='relu'),\n",
+        "    layers.MaxPooling2D( (2,2)),\n",
+        "    layers.Conv2D(64, (3,3), activation='relu'),\n",
+        "    layers.Flatten(),\n",
+        "    layers.Dense(64, activation='relu'),\n",
+        "    layers.Dense(10)\n",
+        "])\n",
+        "\n",
+        "model.compile(optimizer='adam',\n",
+        "              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),\n",
+        "              metrics=['accuracy'])"
+      ],
+      "metadata": {
+        "id": "0F6T5QsarFKI"
+      },
+      "execution_count": 34,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model.summary()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 420
+        },
+        "id": "VhVknkpYwfLe",
+        "outputId": "a7db3391-ae19-46af-b1ea-56c89124a34c"
+      },
+      "execution_count": 35,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1mModel: \"sequential_2\"\u001b[0m\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\">Model: \"sequential_2\"</span>\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓\n",
+              "┃\u001b[1m \u001b[0m\u001b[1mLayer (type)                   \u001b[0m\u001b[1m \u001b[0m┃\u001b[1m \u001b[0m\u001b[1mOutput Shape          \u001b[0m\u001b[1m \u001b[0m┃\u001b[1m \u001b[0m\u001b[1m      Param #\u001b[0m\u001b[1m \u001b[0m┃\n",
+              "┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩\n",
+              "│ conv2d_6 (\u001b[38;5;33mConv2D\u001b[0m)               │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m30\u001b[0m, \u001b[38;5;34m30\u001b[0m, \u001b[38;5;34m32\u001b[0m)     │           \u001b[38;5;34m896\u001b[0m │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ max_pooling2d_4 (\u001b[38;5;33mMaxPooling2D\u001b[0m)  │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m15\u001b[0m, \u001b[38;5;34m32\u001b[0m)     │             \u001b[38;5;34m0\u001b[0m │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ conv2d_7 (\u001b[38;5;33mConv2D\u001b[0m)               │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m13\u001b[0m, \u001b[38;5;34m13\u001b[0m, \u001b[38;5;34m64\u001b[0m)     │        \u001b[38;5;34m18,496\u001b[0m │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ max_pooling2d_5 (\u001b[38;5;33mMaxPooling2D\u001b[0m)  │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m6\u001b[0m, \u001b[38;5;34m6\u001b[0m, \u001b[38;5;34m64\u001b[0m)       │             \u001b[38;5;34m0\u001b[0m │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ conv2d_8 (\u001b[38;5;33mConv2D\u001b[0m)               │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m4\u001b[0m, \u001b[38;5;34m4\u001b[0m, \u001b[38;5;34m64\u001b[0m)       │        \u001b[38;5;34m36,928\u001b[0m │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ flatten_2 (\u001b[38;5;33mFlatten\u001b[0m)             │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m1024\u001b[0m)           │             \u001b[38;5;34m0\u001b[0m │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ dense_4 (\u001b[38;5;33mDense\u001b[0m)                 │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m64\u001b[0m)             │        \u001b[38;5;34m65,600\u001b[0m │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ dense_5 (\u001b[38;5;33mDense\u001b[0m)                 │ (\u001b[38;5;45mNone\u001b[0m, \u001b[38;5;34m10\u001b[0m)             │           \u001b[38;5;34m650\u001b[0m │\n",
+              "└─────────────────────────────────┴────────────────────────┴───────────────┘\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\">┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓\n",
+              "┃<span style=\"font-weight: bold\"> Layer (type)                    </span>┃<span style=\"font-weight: bold\"> Output Shape           </span>┃<span style=\"font-weight: bold\">       Param # </span>┃\n",
+              "┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩\n",
+              "│ conv2d_6 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)               │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">30</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">30</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>)     │           <span style=\"color: #00af00; text-decoration-color: #00af00\">896</span> │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ max_pooling2d_4 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">MaxPooling2D</span>)  │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">15</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">32</span>)     │             <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ conv2d_7 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)               │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">13</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">13</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)     │        <span style=\"color: #00af00; text-decoration-color: #00af00\">18,496</span> │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ max_pooling2d_5 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">MaxPooling2D</span>)  │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">6</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">6</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)       │             <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ conv2d_8 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Conv2D</span>)               │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">4</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">4</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)       │        <span style=\"color: #00af00; text-decoration-color: #00af00\">36,928</span> │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ flatten_2 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Flatten</span>)             │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">1024</span>)           │             <span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ dense_4 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dense</span>)                 │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">64</span>)             │        <span style=\"color: #00af00; text-decoration-color: #00af00\">65,600</span> │\n",
+              "├─────────────────────────────────┼────────────────────────┼───────────────┤\n",
+              "│ dense_5 (<span style=\"color: #0087ff; text-decoration-color: #0087ff\">Dense</span>)                 │ (<span style=\"color: #00d7ff; text-decoration-color: #00d7ff\">None</span>, <span style=\"color: #00af00; text-decoration-color: #00af00\">10</span>)             │           <span style=\"color: #00af00; text-decoration-color: #00af00\">650</span> │\n",
+              "└─────────────────────────────────┴────────────────────────┴───────────────┘\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1m Total params: \u001b[0m\u001b[38;5;34m122,570\u001b[0m (478.79 KB)\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\"> Total params: </span><span style=\"color: #00af00; text-decoration-color: #00af00\">122,570</span> (478.79 KB)\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1m Trainable params: \u001b[0m\u001b[38;5;34m122,570\u001b[0m (478.79 KB)\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\"> Trainable params: </span><span style=\"color: #00af00; text-decoration-color: #00af00\">122,570</span> (478.79 KB)\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "\u001b[1m Non-trainable params: \u001b[0m\u001b[38;5;34m0\u001b[0m (0.00 B)\n"
+            ],
+            "text/html": [
+              "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"font-weight: bold\"> Non-trainable params: </span><span style=\"color: #00af00; text-decoration-color: #00af00\">0</span> (0.00 B)\n",
+              "</pre>\n"
+            ]
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "history = model.fit(train_images, train_labels, epochs=10,\n",
+        "                    validation_data=(test_images, test_labels))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "ZeTTINaRw0j1",
+        "outputId": "6845b5e8-c636-4d41-94fe-c208fa2151d7"
+      },
+      "execution_count": 36,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Epoch 1/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m12s\u001b[0m 6ms/step - accuracy: 0.4360 - loss: 1.5436 - val_accuracy: 0.5454 - val_loss: 1.2787\n",
+            "Epoch 2/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m7s\u001b[0m 4ms/step - accuracy: 0.5784 - loss: 1.1895 - val_accuracy: 0.6077 - val_loss: 1.1102\n",
+            "Epoch 3/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m6s\u001b[0m 4ms/step - accuracy: 0.6404 - loss: 1.0245 - val_accuracy: 0.6166 - val_loss: 1.1260\n",
+            "Epoch 4/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m7s\u001b[0m 4ms/step - accuracy: 0.6785 - loss: 0.9232 - val_accuracy: 0.6574 - val_loss: 0.9823\n",
+            "Epoch 5/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m6s\u001b[0m 4ms/step - accuracy: 0.7045 - loss: 0.8480 - val_accuracy: 0.6841 - val_loss: 0.9100\n",
+            "Epoch 6/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m7s\u001b[0m 4ms/step - accuracy: 0.7237 - loss: 0.7846 - val_accuracy: 0.6904 - val_loss: 0.9021\n",
+            "Epoch 7/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m6s\u001b[0m 4ms/step - accuracy: 0.7446 - loss: 0.7294 - val_accuracy: 0.7021 - val_loss: 0.8777\n",
+            "Epoch 8/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m7s\u001b[0m 4ms/step - accuracy: 0.7587 - loss: 0.6880 - val_accuracy: 0.7078 - val_loss: 0.8758\n",
+            "Epoch 9/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m6s\u001b[0m 4ms/step - accuracy: 0.7742 - loss: 0.6399 - val_accuracy: 0.7098 - val_loss: 0.8811\n",
+            "Epoch 10/10\n",
+            "\u001b[1m1563/1563\u001b[0m \u001b[32m━━━━━━━━━━━━━━━━━━━━\u001b[0m\u001b[37m\u001b[0m \u001b[1m7s\u001b[0m 4ms/step - accuracy: 0.7873 - loss: 0.6019 - val_accuracy: 0.7096 - val_loss: 0.8642\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model.save('image_classifier.keras')"
+      ],
+      "metadata": {
+        "id": "OR89tH9vzv37"
+      },
+      "execution_count": 37,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [],
+      "metadata": {
+        "id": "08z0ej9KwdlD"
+      }
+    }
+  ]
+}
